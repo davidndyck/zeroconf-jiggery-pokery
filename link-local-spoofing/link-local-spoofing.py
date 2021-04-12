@@ -22,4 +22,4 @@ if len(sys.argv) == 2:
     iface_global = sys.argv[1]
     scapy.sniff(filter="arp", iface=iface_global,  prn=handle_arp_packet)
 else:
-    print("Usage: link-local-dos.py <iface>")
+    print("Usage: link-local-spoofing.py <iface>")
