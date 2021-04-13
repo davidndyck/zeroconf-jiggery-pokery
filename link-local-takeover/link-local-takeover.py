@@ -11,28 +11,22 @@ ip_global = ""
 mac_global = ""
 def send_broadcast_request(ip):
     pkt = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")/scapy.ARP(op = who, pdst = ip, hwdst = "00:00:00:00:00:00", psrc = "0.0.0.0")
-    print("Sending packet:")
-    print(scapy.ls(pkt))
-    scapy.sendp(pkt, verbose = True,  iface=iface_global)
+    print("Sending broadcast request")
+    scapy.sendp(pkt, verbose = False,  iface=iface_global)
 def send_broadcast_announce(ip):
     pkt = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")/scapy.ARP(op = who, pdst = ip, hwdst = "00:00:00:00:00:00", psrc = ip)
-    print("Sending packet:")
-    print(scapy.ls(pkt))
-    scapy.sendp(pkt, verbose = True,  iface=iface_global)
+    print("Sending broadcast announce")
+    scapy.sendp(pkt, verbose = False,  iface=iface_global)
 def send_reply(ip,  mac):
     pkt = scapy.Ether(dst=mac)/scapy.ARP(op = reply, pdst = ip, hwdst = mac, psrc = ip_global)
-    print("Sending packet:")
-    print(scapy.ls(pkt))
-    scapy.sendp(pkt, verbose = True,  iface=iface_global)
+    scapy.sendp(pkt, verbose = False,  iface=iface_global)
 def handle_new_packet(pkt):
-    print("received new packet")
+    print("received new packet:")
     print(scapy.ls(pkt))
     return
 def handle_arp_packet(pkt):
-    print("ARP!")
     if pkt[scapy.ARP].op == who and pkt[scapy.ARP].pdst == ip_global and pkt[scapy.Ether].src != mac_global:
-        print(scapy.ls(pkt))
-        print("Got ARP request. Sending reply")
+        print("Got ARP request. Sending reply.")
         send_reply(pkt[scapy.ARP].psrc, pkt[scapy.Ether].src)
     
     return
@@ -51,7 +45,7 @@ if len(sys.argv) == 3:
     send_broadcast_announce(ip)
     send_broadcast_announce(ip)
     time.sleep(4)
-    s = scapy.AsyncSniffer(filter="dst host %s" % ip, iface=iface_global,  prn=handle_new_packet) #Requires scapy >= 2..4.3
+    s = scapy.AsyncSniffer(filter="!arp && dst host %s" % ip, iface=iface_global,  prn=handle_new_packet) #Requires scapy >= 2..4.3
     s.start()
     false = True #Just to bug you...
     while(false):
