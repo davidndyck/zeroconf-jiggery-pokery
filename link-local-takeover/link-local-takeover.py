@@ -8,6 +8,7 @@ who=1
 reply=2
 iface_global = ""
 ip_global = ""
+mac_global = ""
 def send_broadcast_request(ip):
     pkt = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")/scapy.ARP(op = who, pdst = ip, hwdst = "00:00:00:00:00:00", psrc = "0.0.0.0")
     print("Sending packet:")
@@ -18,8 +19,8 @@ def send_broadcast_announce(ip):
     print("Sending packet:")
     print(scapy.ls(pkt))
     scapy.sendp(pkt, verbose = True,  iface=iface_global)
-def send_specific_request(ip,  mac):
-    pkt = scapy.Ether(dst=mac)/scapy.ARP(op = who, pdst = "1.1.1.1", hwdst = mac, psrc = ip)
+def send_reply(ip,  mac):
+    pkt = scapy.Ether(dst=mac)/scapy.ARP(op = reply, pdst = ip, hwdst = mac, psrc = ip_global)
     print("Sending packet:")
     print(scapy.ls(pkt))
     scapy.sendp(pkt, verbose = True,  iface=iface_global)
@@ -29,12 +30,10 @@ def handle_new_packet(pkt):
     return
 def handle_arp_packet(pkt):
     print("ARP!")
-
-    if pkt[scapy.ARP].op == reply and pkt[scapy.ARP].psrc == ip_global and pkt[scapy.Ether].src != mac_global:
+    if pkt[scapy.ARP].op == who and pkt[scapy.ARP].pdst == ip_global and pkt[scapy.Ether].src != mac_global:
         print(scapy.ls(pkt))
-        print("Got ARP request. requesting from them a few times to get them to give us their IP")
-        for i in range(0, 10):
-            send_specific_request(ip_global,  pkt[scapy.Ether].src)
+        print("Got ARP request. Sending reply")
+        send_reply(pkt[scapy.ARP].psrc, pkt[scapy.Ether].src)
     
     return
 
@@ -43,10 +42,14 @@ if len(sys.argv) == 3:
     ip= sys.argv[2]
     ip_global = ip
     mac_global = scapy.get_if_hwaddr(iface_global)
-    s_arp = scapy.AsyncSniffer(filter="arp",  iface=iface_global,  prn=handle_arp_packet,  count=5)
+    s_arp = scapy.AsyncSniffer(filter="arp",  iface=iface_global,  prn=handle_arp_packet)
     s_arp.start()
     send_broadcast_request(ip)
-    s_arp.stop()
+    send_broadcast_request(ip)
+    send_broadcast_request(ip)
+    send_broadcast_announce(ip)
+    send_broadcast_announce(ip)
+    send_broadcast_announce(ip)
     time.sleep(4)
     s = scapy.AsyncSniffer(filter="dst host %s" % ip, iface=iface_global,  prn=handle_new_packet) #Requires scapy >= 2..4.3
     s.start()
@@ -57,6 +60,7 @@ if len(sys.argv) == 3:
             send_broadcast_announce(ip)
         except KeyboardInterrupt:
             s.stop()
+            s_arp.stop()
             sys.exit(0)
 
 else:
