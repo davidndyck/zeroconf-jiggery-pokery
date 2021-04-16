@@ -1,5 +1,7 @@
 # mDNS Link-Local Takeover
 
+Zeroconf modified from here: https://github.com/wmcbrine/pyzeroconf
+
 Take over a zeroconf service by stealing a victim's IP and copying their mDNS advertisment. Also stops the victim from acquiring a different link-local IP
 
 Usage: sudo python3 ./mdns-link-local-takeover.py <zone> <interface>
